@@ -1,0 +1,7 @@
+01-Makefile.patch
+02-pcimodules.patch
+03-pci.ids.patch
+04-update-pciids.sh.patch
+07-697383-libpci.pc.in.patch
+1000-2015-09-15.patch
+1001-2016-01-02.patch
