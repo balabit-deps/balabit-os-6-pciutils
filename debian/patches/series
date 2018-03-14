@@ -6,3 +6,4 @@
 1000-2015-09-15.patch
 1001-2016-01-02.patch
 lspci-Support-GEN4-speed-16GT-s.patch
+08-Sysfs-Read-failures-of-optional-attributes-are-not-f.patch

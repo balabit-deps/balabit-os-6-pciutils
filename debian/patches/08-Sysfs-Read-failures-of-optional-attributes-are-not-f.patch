@@ -1,0 +1,54 @@
+From e5bb28afa6124b26cd25506892214a5d3cb9eb60 Mon Sep 17 00:00:00 2001
+From: Martin Mares <mj@ucw.cz>
+Date: Mon, 14 Sep 2015 17:43:04 +0200
+Subject: [PATCH] Sysfs: Read failures of optional attributes are not fatal
+
+Ameya Palande reported that with some kernels, reads of such
+attributes fail on some hardware. He suggested to ignore read
+failures completely, but I decided to turn the errors into
+warnings in such cases. At least, the user will know that something
+fishy is going on.
+---
+ lib/sysfs.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/lib/sysfs.c b/lib/sysfs.c
+index a16c92a..986ecc9 100644
+--- a/lib/sysfs.c
++++ b/lib/sysfs.c
+@@ -93,21 +93,28 @@ sysfs_get_string(struct pci_dev *d, char *object, char *buf, int mandatory)
+   struct pci_access *a = d->access;
+   int fd, n;
+   char namebuf[OBJNAMELEN];
++  void (*warn)(char *msg, ...) = (mandatory ? a->error : a->warning);
+ 
+   sysfs_obj_name(d, object, namebuf);
+   fd = open(namebuf, O_RDONLY);
+   if (fd < 0)
+     {
+-      if (mandatory)
+-	a->error("Cannot open %s: %s", namebuf, strerror(errno));
++      if (mandatory || errno != ENOENT)
++	warn("Cannot open %s: %s", namebuf, strerror(errno));
+       return 0;
+     }
+   n = read(fd, buf, OBJBUFSIZE);
+   close(fd);
+   if (n < 0)
+-    a->error("Error reading %s: %s", namebuf, strerror(errno));
++    {
++      warn("Error reading %s: %s", namebuf, strerror(errno));
++      return 0;
++     }
+   if (n >= OBJBUFSIZE)
+-    a->error("Value in %s too long", namebuf);
++    {
++      warn("Value in %s too long", namebuf);
++      return 0;
++    }
+   buf[n] = 0;
+   return 1;
+ }
+-- 
+2.7.4
+
